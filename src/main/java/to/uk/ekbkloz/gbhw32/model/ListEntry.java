@@ -11,6 +11,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by KlozK on 18.09.2016.
@@ -162,7 +164,7 @@ public class ListEntry {
      * @throws InvocationTargetException
      * @throws IllegalAccessException
      */
-    public static ListEntry getFromCsvRecord(CSVRecord record) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public static ListEntry getFromCsvRecord(CSVRecord record) {
         Class clazz = ListEntry.class;
         ListEntry entry = new ListEntry();
         String setterName;
@@ -173,17 +175,19 @@ public class ListEntry {
                 setterName = "set" + method.getName().substring(3);
                 header = method.getAnnotation(Column.class).name();
                 fieldType = method.getReturnType();
-                clazz.getDeclaredMethod(setterName, fieldType).invoke(entry, Converter.fromString(record.get(header), fieldType));
+                try {
+                    clazz.getDeclaredMethod(setterName, fieldType).invoke(entry, Converter.fromString(record.get(header), fieldType));
+                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                    throw new RuntimeException(e.getMessage(), e.getCause());
+                }
             }
         }
         return entry;
     }
 
-    public static ArrayList<ListEntry> getFromCsvRecord(Iterable<CSVRecord> records) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public static ArrayList<ListEntry> getFromCsvRecord(List<CSVRecord> records)  {
         ArrayList<ListEntry> listEntries = new ArrayList<ListEntry>();
-        for (CSVRecord record : records) {
-            listEntries.add(getFromCsvRecord(record));
-        }
+        listEntries.addAll(records.parallelStream().map(ListEntry::getFromCsvRecord).collect(Collectors.toList()));
         return listEntries;
     }
 

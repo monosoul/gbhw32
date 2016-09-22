@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class MainApp {
     public static void main(String[] args) throws IOException, SQLException {
         try(Reader in = new FileReader("src/main/resources/List.csv")){
-            Iterable<CSVRecord> records = CSVFormat.RFC4180.withDelimiter('\t').withIgnoreEmptyLines().withIgnoreSurroundingSpaces().withFirstRecordAsHeader().parse(in);
+            List<CSVRecord> records = CSVFormat.RFC4180.withDelimiter('\t').withIgnoreEmptyLines().withIgnoreSurroundingSpaces().withFirstRecordAsHeader().parse(in).getRecords();
             ListEntryDAO dao = new ListEntryDAOImpl();
             try {
                 dao.openConnection();
@@ -53,7 +53,7 @@ public class MainApp {
                         dao.add(toAdd);
                     }
                 }
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | SQLException | ClassNotFoundException e) {
+            } catch (SQLException | ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
                 dao.closeConnection();
